@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 from tokenizer import create_dataset, TokenAndPositionEmbedding
-
+import json
 
 torch.manual_seed(123)
 '''
@@ -106,12 +106,14 @@ class MultiheadAttention(nn.Module):
         self.head_dim = dim_out // num_heads
 
     def forward(self, x):
+
+        #print('x.shape:{}'.format(x.shape))
         batch_size, num_tokens, dim_in = x.shape
         
         keys = self.W_key(x) # shape (batch_size, num_tokens, dim_out)
         queries = self.W_query(x)
         values = self.W_value(x)
-        print('values shape: {}'.format(values.shape))
+        #print('values shape: {}'.format(values.shape))
 
         # decompose the matrix into (batch_size, num_tokens, num_heads, head_dim)
         keys = keys.view(batch_size, num_tokens, self.num_heads, self.head_dim)
@@ -123,7 +125,7 @@ class MultiheadAttention(nn.Module):
         queries = queries.transpose(1,2)
         values = values.transpose(1,2)
         
-        print('values shape after decompose: {}'.format(values.shape))
+        #print('values shape after decompose: {}'.format(values.shape))
 
         attn_scores = queries @ keys.transpose(2,3)
         mask = self.mask.bool()
@@ -137,26 +139,18 @@ class MultiheadAttention(nn.Module):
         context_vector = context_vector.contiguous().view(batch_size, num_tokens, self.dim_out)
         return context_vector
 
-
-
-
-        
-        
-
-
-
 if __name__ == "__main__":
     
     '''
     dim_in = 3
     dim_out = 2
     inputs = torch.tensor(
-    [[0.43, 0.15, 0.89], # This     (x^1)
-    [0.55, 0.87, 0.66], # is        (x^2)
-    [0.57, 0.85, 0.64], # multihead (x^3)
-    [0.22, 0.58, 0.33], # layers    (x^4)
-    [0.77, 0.25, 0.10], # for       (x^5)
-    [0.05, 0.80, 0.55]] # LLM        (x^6)
+    [[0.43, 0.15, 0.89], # Your     (x^1)
+    [0.55, 0.87, 0.66], # journey  (x^2)
+    [0.57, 0.85, 0.64], # starts   (x^3)
+    [0.22, 0.58, 0.33], # with     (x^4)
+    [0.77, 0.25, 0.10], # one      (x^5)
+    [0.05, 0.80, 0.55]] # step     (x^6)
     )
     num_heads = 2
 
@@ -171,16 +165,31 @@ if __name__ == "__main__":
     print('multi_head_attention shape: {}\n and values:{}'.format(multi_head_attentions.shape, multi_head_attentions))
    '''
     
+    # load the GPT2 model configuration
+    gpt_config_file_path = 'gpt_config_124M.json'
+    with open(gpt_config_file_path, 'r', encoding= 'utf-8') as gpt_config_file:
+        config = json.load(gpt_config_file)
+    
+    #print(config['drop_rate'])
+
+
     filepath = "the-verdict.txt"
     batch_size = 8
-    max_length = 256
+    max_length = config['context_length'] #256
     stride = 128
-    vocab_size = 50257
-    dim_out = 256
-    context_length = 256
+    vocab_size = config['vocab_size']
+    dim_out = config["emb_dim"]           #256
+    context_length = config['context_length']  #256
+    num_heads = config['n_heads']              #4
+    dim_in = config["emb_dim"]
 
+    dropout = 0.1 #config['dropout']
+
+
+    
     with open(filepath, 'r', encoding= 'utf-8') as f:
         raw_text = f.read()
+    
 
     dataloader = create_dataset(txt= raw_text, batch_size= batch_size, max_length= max_length, stride= stride)
     print("No of Batch Groups: {}".format(len(dataloader)))
@@ -198,22 +207,16 @@ if __name__ == "__main__":
     token_embeddings, pos_embeddings = tokenandpositionembedding.forward(inputs)
     
     
-    print("token_embeddings shape: {}".format(token_embeddings.shape))
-    print("pos_embeddings shape: {}".format(pos_embeddings.shape))
+    #print("token_embeddings shape: {}".format(token_embeddings.shape))
+    #print("pos_embeddings shape: {}".format(pos_embeddings.shape))
 
 
     input_embeddings = token_embeddings + pos_embeddings
-    print("input_embeddings shape: {}".format(input_embeddings.shape))
-    #print("\n input_embeddings :{}".format(input_embeddings))
-
-    num_heads = 4
-    dim_in = context_length
-
-    context_vector = MultiheadAttention(dim_in, dim_out, context_length, dropout= 0.0, num_heads= num_heads)
+    print("input shape: {}".format(input_embeddings.shape))
+    context_vector = MultiheadAttention(dim_in, dim_out, context_length, dropout= dropout, num_heads= num_heads)
     context_vector = context_vector(input_embeddings)
 
-    print('multi_head_attention shape: {}'.format(context_vector.shape))
-
+    print('output shape: {}'.format(context_vector.shape))
     
     
 
