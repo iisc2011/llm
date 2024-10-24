@@ -141,30 +141,6 @@ class MultiheadAttention(nn.Module):
 
 if __name__ == "__main__":
     
-    '''
-    dim_in = 3
-    dim_out = 2
-    inputs = torch.tensor(
-    [[0.43, 0.15, 0.89], # Your     (x^1)
-    [0.55, 0.87, 0.66], # journey  (x^2)
-    [0.57, 0.85, 0.64], # starts   (x^3)
-    [0.22, 0.58, 0.33], # with     (x^4)
-    [0.77, 0.25, 0.10], # one      (x^5)
-    [0.05, 0.80, 0.55]] # step     (x^6)
-    )
-    num_heads = 2
-
-
-    batch = torch.stack((inputs, inputs), dim=0)
-    print('Batch Size: {}'.format(batch.shape))
-    context_length = batch.shape[1] # No of tokens
-    
-    multi_head_attentions = MultiheadAttention(dim_in, dim_out, context_length, dropout= 0.0, num_heads= num_heads)
-    multi_head_attentions = multi_head_attentions(batch)
-
-    print('multi_head_attention shape: {}\n and values:{}'.format(multi_head_attentions.shape, multi_head_attentions))
-   '''
-    
     # load the GPT2 model configuration
     gpt_config_file_path = 'gpt_config_124M.json'
     with open(gpt_config_file_path, 'r', encoding= 'utf-8') as gpt_config_file:
