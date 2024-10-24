@@ -1,1 +1,2 @@
-from tokenizer import create_dataset, TokenAndPositionEmbedding 
+from tokenizer import create_dataset, TokenAndPositionEmbedding
+from self_attention import MultiheadAttention 
